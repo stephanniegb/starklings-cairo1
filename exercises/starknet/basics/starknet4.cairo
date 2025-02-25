@@ -4,7 +4,7 @@
 // for how contract should work, can you help Jill and Joe write it?
 // Execute `starklings hint starknet4` or use the `hint` watch subcommand for a hint.
 
-// I AM NOT DONE
+
 
 use starknet::ContractAddress;
 
@@ -25,6 +25,7 @@ mod LizInventory {
     #[storage]
     struct Storage {
         contract_owner: ContractAddress,
+        inventory: Map<felt252, u32>,
         // TODO: add storage inventory, that maps product (felt252) to stock quantity (u32)
     }
 
@@ -36,24 +37,32 @@ mod LizInventory {
 
     #[abi(embed_v0)]
     impl LizInventoryImpl of super::ILizInventory<ContractState> {
-        fn add_stock(ref self: ContractState, ) {
+        fn add_stock(ref self: ContractState, product: felt252, new_stock: u32) {
+            let caller_address = get_caller_address();
+            assert(self.contract_owner.read() == caller_address, 'not owner');
             // TODO:
             // * takes product and new_stock
+            let existing_stock = self.inventory.read(product);
+            self.inventory.write(product, existing_stock + new_stock);
             // * adds new_stock to stock in inventory
             // * only owner can call this
         }
 
-        fn purchase(ref self: ContractState, ) {
+        fn purchase(ref self: ContractState, product: felt252, quantity: u32) {
             // TODO:
             // * takes product and quantity
             // * subtracts quantity from stock in inventory
+            let _quantity = self.inventory.read(product);
+            assert(_quantity >= quantity, 'out of stock');
+            self.inventory.write(product, _quantity - quantity);
             // * anybody can call this
         }
 
-        fn get_stock(self: @ContractState, ) -> u32 {
+        fn get_stock(self: @ContractState, product: felt252) -> u32 {
             // TODO:
             // * takes product
             // * returns product stock in inventory
+            self.inventory.read(product)
         }
 
         fn get_owner(self: @ContractState) -> ContractAddress {
